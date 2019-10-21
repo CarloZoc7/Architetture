@@ -15,38 +15,33 @@ Min:	.space 1
 
 .text         
 
-start:  	
+start:  	; r2 indice del vettore, r3 grandezza alla quale bisogna arrivare
+			; r6 max, r5 min, r7 e r8 valori dei vettori da sommare con risultato in r4 (vettore result) 
+			;
+
 			daddui r2, r0, 0 ; indice del vettore a 0
+			daddui r6, r0, 0 	; max
+			daddui r5, r0, 255	; min
 			daddui r3,r0, 50
 
 cycle:
-			lb r4, VectorA(r2)
-			lb r5, VectorB(r2)
-			dadd r6, r4, r5
-			sb r6, Result(r2)
-			daddui r2, r2, 1
-			bne r2, r3, cycle
+			lb r7, VectorA(r2)
+			lb r8, VectorB(r2)
+			dadd r4, r7, r8
+			sb r4, Result(r2)
 
-			daddui r2, r0, 0
-			daddui r3,r0, 50
-
-			daddui r6, r0, 0 	; max
-			daddui r5, r0, 255	; min
-			
-cycle2:	
-			lb r4, Result(r2)
 			slt r1, r4, r6	; if(Result[r2]<max) r1 = 1 else r1 = 0
 			beq r1, r0, max ; condizione verificata r1==r0
 continue1:
 			slt r1, r4, r5	; if(Result[r2]<min) r1 = 1 else r1 = 0 
 			bne r1, r0, min ; condizione verificata r1 != r0
 continue2:
-			daddui r2, r2, 1		
-			bne r2, r3, cycle2
+			daddui r2, r2, 1
+			bne r2, r3, cycle
+
 			sb r6, Max(r0)
 			sb r5, Min(r0)
 			j block
-
 
 max:		daddui r6, r0, 0
 			dadd r6, r0, r4
