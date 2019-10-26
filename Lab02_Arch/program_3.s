@@ -51,8 +51,8 @@ counter_ones:
 	bnez r5, counter_ones	;(1) peggiore dei casi 8 volte per la grandezza in byte
 
 	dsrl r10, r9, 1		; prendo nuovamente l'ultimo bit per controllare se il numero di bit a 1 sia pari o dispari
-	beqz r10, even      ;(2)
-	j odd       ;(1)
+	beqz r10, even      ;(4)
+	j odd       ;(2)
 
 continue:
 	
@@ -64,9 +64,9 @@ continue:
 HALT
 
 even:
-	daddui r12, r12, 1 ;(1)
+	daddui r12, r12, 1 ;(2)
 	j continue	;(1)
 
 odd:
-	daddui r11, r11, 1	;(1)
+	daddui r11, r11, 1	;(2)
 	j continue	;(1)
