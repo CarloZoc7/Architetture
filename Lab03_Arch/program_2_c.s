@@ -16,18 +16,51 @@
 	;	for(i=0; i<30; i++)
 	;		v5[i] = (v1[i]*v2[i]+v3[i])
 	;		v6[i] = (v3[i]*v4[i])/v5[i]
+
+	;	CAMBIAMENTO CON UNROLL
+	;	for(i=0; i<30; i=i+3)
+	;		v5[i] = (v1[i]*v2[i]+v3[i])
+	;		v6[i] = (v3[i]*v4[i])/v5[i]
+	;
+	;		v15[i+1] = (v11[i+1]*v12[i+1]+v13[i+1])
+	;		v16[i+1] = (v13[i+1]*v14[i+1])/v15[i+1]
+	;
+	;		v25[i+2] = (v21[i+2]*v22[i+2]+v23[i+2])
+	;		v26[i+2] = (v23[i+2]*v24[i+2])/v25[i+2]
 start:
 	
 		dadd r1, r1, r0 ; r1 indice del vettore
 		daddui r2, r2, 240
 cycle:
+			
+		daddui r11, r1, 8
+		daddui r21, r1, 16
+
 		l.d f1, v1(r1)
 		l.d f2, v2(r1)
 		l.d f3, v3(r1)
 		l.d f4, v4(r1)
 
+
+
+		l.d f11, v1(r11)
+		l.d f12, v2(r11)
+		l.d	f13, v3(r11)
+		l.d f14, v4(r11)
+
+		l.d f21, v1(r21)
+		l.d f22, v2(r21)
+		l.d	f23, v3(r21)
+		l.d f24, v4(r21)
+
 		mul.d f5, f1, f2	; f5 = f1*f2
 		mul.d f6, f3, f4	; f6 = f3*f4
+
+		mul.d f15, f11, f12
+		mul.d f16, f13, f14
+
+		mul.d f25, f21, f22
+		mul.d f26, f23, f24
 		nop
 		nop
 		nop
@@ -35,15 +68,17 @@ cycle:
 		nop
 		nop
 		nop
-		add.d f10, f0, f5
 		nop
 		nop
-		nop
-		add.d f5, f10, f3	; f5 = f5+f3
+		add.d f5, f5, f3	; f5 = f5*f3
+		add.d f15, f15, f13	; f15= f15*f13
+		add.d f25, f25, f23 ; f25 = f25*f23
 		nop
 		nop
 		nop					; fase di execute
 		div.d f6, f6, f5	; f6 = f6/f5
+		div.d f16, f16, f15
+		div.d f26, f26, f25
 		nop
 		nop
 		nop
@@ -58,7 +93,13 @@ cycle:
 		nop
 		s.d f5, v5(r1)
 		s.d f6, v6(r1)
-		daddui r1, r1, 8
+		
+		s.d f15, v5(r11)
+		s.d f16, v6(r11)
+
+		s.d f25, v5(r21)
+		s.d f26, v6(r21)
+		daddui r1, r1, 24 ; per i=i+3 sará pari a i = i+24
 		nop
 		nop
 		nop
