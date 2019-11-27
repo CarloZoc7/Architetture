@@ -127,15 +127,30 @@ Reset_Handler   PROC
                  LDR     R0, =Reset_Handler
 				
 				; your code here
-				MOV R0, #-0xAA
-				MOV R1, #0x0A
-				MOV R3, #0xAA
-				MOV R4, #0x0A
+				MOV R0, #0X09
+				MOV R1, #0X01
+				MOV R3, #0X0A
+				MOV R4, #0XAA
 				
-				ADDS R2, R0, R1
-				SUBS R5, R4, R3
+				ADD R2, R0, R2
+				SUB R5, R4, R3
 				
-                BX      R0
+				CMP R2, R5
+				BNE Diversi
+				
+				MUL R3, R0, R0
+				ADD R3, R3, R1
+				B Fine
+				
+Diversi			CMP R0,R1
+				BHS Max
+				
+				MOV R2, R1
+				B Fine
+				
+Max				MOV R2, R0
+				
+Fine            BX      R0
                 ENDP
 
 
