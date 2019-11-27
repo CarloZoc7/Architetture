@@ -134,7 +134,7 @@ Reset_Handler   PROC
 				
 				ADD R2, R0, R2
 				SUB R5, R4, R3
-				
+				hg
 				CMP R2, R5
 				BNE Diversi
 				
