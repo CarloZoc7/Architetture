@@ -27,7 +27,7 @@ Image Symbol Table
     RESET                                    0x00000000   Section      204  startup.o(RESET)
     startup.s                                0x00000000   Number         0  startup.o ABSOLUTE
     .text                                    0x000000cc   Section      144  startup.o(.text)
-    Sin0                                     0x000000ce   Data          64  startup.o(.text)
+    Sin0                                     0x000000ce   Data          10  startup.o(.text)
     .ARM.__at_0x02FC                         0x000002fc   Section        4  startup.o(.ARM.__at_0x02FC)
     STACK                                    0x10000000   Section      512  startup.o(STACK)
 

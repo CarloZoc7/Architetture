@@ -115,21 +115,26 @@ __Vectors       DCD     __initial_sp              ; Top of Stack
                 AREA    |.ARM.__at_0x02FC|, CODE, READONLY
 CRP_Key         DCD     0xFFFFFFFF
                 ENDIF
-
+				
+				AREA	sin, DATA, READONLY
+Sin0			DCW 512, 612, 708, 796, 873
+				DCW 937, 984, 1013, 1023, 1013
+				DCW 984, 937, 873, 796, 708
+				DCW 612, 512, 412, 316, 228 
+				DCW 151, 87, 40, 11, 1
+				DCW 11, 40, 87, 151, 228 
+				DCW 316, 412
+				
+				AREA	HALF_SIN, DATA, READWRITE		
+New_Sin 		SPACE 	0x020
 
                 AREA    |.text|, CODE, READONLY
-				
-
-; Reset Handler
 
 Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]                                            
                 LDR     R0, =Reset_Handler
-				; your code here
+				; your code here	
 				
-Sin0			DCW 512, 612, 708, 796, 873, 937, 984, 1013, 1023, 1013, 984, 937, 873, 796, 708, 612, 512, 412, 316, 228, 151, 87, 40, 11, 1, 11, 40, 87, 151, 228, 316, 412
-New_Sin			SPACE 40 ; riservo 40 byte = 32 elementi x 10 bit ciascuno
-	
 	
 				MOV R1, #0x20
 				MOV R0, #0x0
@@ -144,7 +149,7 @@ New_Sin			SPACE 40 ; riservo 40 byte = 32 elementi x 10 bit ciascuno
 Ciclo			LDRH R5, [R2, R6]
 				UDIV R5, R5, R7
 				
-				STRB R5, [R3, R8]
+				STRH R5, [R3, R8]
 				
 				ADD R0, R0, #0x01
 				ADD R6, R6, #0x02
@@ -156,6 +161,8 @@ Ciclo			LDRH R5, [R2, R6]
 				BX      R0
 
                 ENDP
+	
+				
 
 
 ; Dummy Exception Handlers (infinite loops which can be modified)
@@ -288,6 +295,7 @@ CANActivity_IRQHandler
 
                 EXPORT  __initial_sp
                 EXPORT  __heap_base
-                EXPORT  __heap_limit                
+                EXPORT  __heap_limit  
+				
 
                 END
