@@ -144,10 +144,9 @@ Reset_Handler   PROC
 				MOV R8, #0x00
 				
 				MOV R6, #0x0
-				MOV R7, #0x02
 
 Ciclo			LDRH R5, [R2, R6]
-				UDIV R5, R5, R7
+				LSRS R5, R5, #0x01
 				
 				STRH R5, [R3, R8]
 				

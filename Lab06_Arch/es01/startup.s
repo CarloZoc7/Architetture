@@ -116,7 +116,15 @@ __Vectors       DCD     __initial_sp              ; Top of Stack
 CRP_Key         DCD     0xFFFFFFFF
                 ENDIF
 
-
+				AREA	sin, DATA, READONLY
+Sin0			DCW 512, 612, 708, 796, 873
+				DCW 937, 984, 1013, 1023, 1013
+				DCW 984, 937, 873, 796, 708
+				DCW 612, 512, 412, 316, 228 
+				DCW 151, 87, 40, 11, 1
+				DCW 11, 40, 87, 151, 228 
+				DCW 316, 412
+				
                 AREA    |.text|, CODE, READONLY
 
 
@@ -126,15 +134,7 @@ Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]                                            
                 LDR     R0, =Reset_Handler
 				; your code here
-				
-Sin0			DCW 512, 612, 708, 796, 873
-				DCW 937, 984, 1013, 1023, 1013
-				DCW 984, 937, 873, 796, 708
-				DCW 612, 512, 412, 316, 228 
-				DCW 151, 87, 40, 11, 1
-				DCW 11, 40, 87, 151, 228 
-				DCW 316, 412
-				
+
 				MOV R1, #0x20
 				MOV R0, #0x0
 				LDR R2, =Sin0
