@@ -55,6 +55,8 @@ volatile int elevator_floor = 0;	// variabile globale che indica dove si trova l
 	*/
 // differenza tra elavator floor e movement è che movement da la direzione in cui si muove l'ascensore
 
+// PROVO CON LA FUNZIONE PER LA GESTIONE DEL LED A 2 HZ
+
 void RIT_IRQHandler (void)
 {					
 	static int selectUP=0;	
@@ -83,7 +85,7 @@ void RIT_IRQHandler (void)
 				/* here your action */
 				init_timer(0, BLINKING_MOVING);
 				enable_timer(0);
-				
+			
 				// accendo i RESERVED LED poiché sono in movimento e l'ascensore è occupato
 				LED_On(0);
 				LED_On(2);
@@ -201,7 +203,7 @@ void RIT_IRQHandler (void)
 				*/
 				inactivity_joystick++;
 				if(arrived == -1) 
-					LED_On(7); // accendo lo status LED poichè non sono arrivato a destinazione e sono fermo tra i due piani 
+					LED_On(7); // accendo lo status LED poichè NON sono arrivato a destinazione e sono fermo tra i due piani 
 			}
 			
 			if( inactivity_joystick >= INACTIVITY_TIME && reserved == 0){
@@ -227,6 +229,9 @@ void RIT_IRQHandler (void)
 	
 	if( arrived > 0){
 			arrived++;
+			
+			disable_timer(1); // disattivo il timer 1 
+			
 			init_timer(0, BLINKING_ARRIVING);
 			enable_timer(0);
 		
@@ -256,8 +261,9 @@ void RIT_IRQHandler (void)
 					if ( elevator_floor != 1){ // se l'ascensore è al piano opposto del 1° piano, va in movimento
 							// avvio la procedure per arrivare al piano opposto
 							reserved = 1; // finchè non arriva al piano indicato non posso utilizzare il joystick 
-							
-							init_timer(1, 0xABA9500); // tempo di spostamento pari a 7.2sec * 25e6 = 180e6 --> ABA9500
+							movement = 1; // ascensore in salita dal piano 0 al piano 1
+						
+							init_timer(1, TIME_MOVING); // tempo di spostamento pari a 7.2sec * 25e6 = 180e6 --> ABA9500
 							enable_timer(1);
 							
 							init_timer(0, BLINKING_MOVING);
@@ -282,7 +288,9 @@ void RIT_IRQHandler (void)
 					// avvio la procedura del piano sottostante
 						
 							reserved = 1;
-							init_timer(1, 0xABA9500); // tempo di spostamento pari a 7.2sec * 25e6 = 180e6 --> ABA9500
+							movement = -1; // ascensore in discesa dato cha sará dal piano 1 al piano 0
+						
+							init_timer(1, TIME_MOVING); // tempo di spostamento pari a 7.2sec * 25e6 = 180e6 --> ABA9500
 							enable_timer(1);
 							
 							init_timer(0, BLINKING_MOVING);
