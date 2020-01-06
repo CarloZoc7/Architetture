@@ -35,7 +35,7 @@ void TIMER0_IRQHandler (void) // timer usato per il blinking del led alle varie 
 		LED_Off(7);
 	}
 	i++;
-	if( i >= 10)
+	if( i >= 1000)
 		i = 0;
 	LPC_TIM0->IR = 1;			/* clear interrupt flag */
   return;
@@ -67,13 +67,25 @@ void TIMER1_IRQHandler (void) // timer usato per il tragitto in caso di prenotaz
   return;
 }
 
-void TIMER2_IRQHandler (void){
+void TIMER2_IRQHandler (void){ // timer utilizzato per il blinking in arrivo
   
+	if(i%2==0){
+		LED_On(7);
+	}
+	else{
+		LED_Off(7);
+	}
+	i++;
+	if( i >= 1000)
+		i = 0;
+	
 	LPC_TIM2->IR = 1;			/* clear interrupt flag */
   return;
 }
 
 void TIMER3_IRQHandler(void){
+	LPC_TIM3->IR = 1;			/* clear interrupt flag */
+  return;
 }
 
 /******************************************************************************

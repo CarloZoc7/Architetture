@@ -162,30 +162,27 @@ uint32_t init_timer ( uint8_t timer_num, uint32_t TimerInterval )
 //	 <i> 1 Stop on MR3: the TC and PC will be stopped and TCR[3] will be set to 0 if MR3 matches the TC
 //	 <i> 0 Feature disabled.
 //   </e>
-	LPC_TIM0->MCR = 0x0005;
+	LPC_TIM0->MCR = 0x0003;
 // </h>
 //*** <<< end of configuration section >>>    ***
 	
 	// Timer0 utilizzato per il blinking del LED 
 	
 	NVIC_EnableIRQ(TIMER0_IRQn);
-	NVIC_SetPriority(TIMER0_IRQn, 2); // timer for the blinding is lower priority
-
 	return (1);
   }
   else if ( timer_num == 1 )
   {
 	// Timer 1 utilizzato per il conteggio dei 7.2 sec durante il passaggio della rampa
-	LPC_TIM1->MR1 = TimerInterval;
-	LPC_TIM1->MCR = 0x00028;				/* Interrupt and Reset on MR0 */
+	LPC_TIM1->MR0 = TimerInterval;
+	LPC_TIM1->MCR = 0x0007;				/* Interrupt and Reset on MR0 */
 
 	NVIC_EnableIRQ(TIMER1_IRQn);
-	NVIC_SetPriority(TIMER1_IRQn, 3); // timer for the moving of the elevator is high priority
 	return (1);
   } else if ( timer_num == 2)
 	{
-	LPC_TIM2->MR2 = TimerInterval;
-	LPC_TIM2->MCR = 0x1C0;				/* Interrupt and Reset on MR2 */
+	LPC_TIM2->MR0 = TimerInterval;
+	LPC_TIM2->MCR = 0x00003;				/* Interrupt and Reset on MR0 */
 
 	NVIC_EnableIRQ(TIMER2_IRQn);
 	return (1);
