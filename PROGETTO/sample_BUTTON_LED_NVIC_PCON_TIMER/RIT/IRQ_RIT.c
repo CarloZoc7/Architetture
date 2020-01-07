@@ -13,13 +13,21 @@
 #include "../button_EXINT/button.h"
 #include "../timer/timer.h"
 
+#define simulazione 1
 
 #define BLINKING_3s 60 // 3/0.05 = 60 --> 0x03C 60 interrupt i 3 sec 
 #define TOT_TIME 144 // totale tempo di spostamento 7.2sec/0.05 = 144
-#define TIME_MOVING 0xABA9500// 7.2sec * 25e6 = 18e6 --> 0xABA9500
 #define INACTIVITY_TIME 1200 // 60/0.05 = 1200 --> 0x4B0
-#define BLINKING_MOVING 0x5F5E10 // 2Hz -> (0.5/2)sec *25e6 = 6.25e6  --> 0x5F5E10
-#define BLINKING_ARRIVING 0x2625A0 // 5Hz -> (0.2/2)sec * 25e6 = 2.5e6 --> 0x2625A0
+#define TIME_MOVING 0xABA9500// 7.2sec * 25e6 = 18e6 --> 0xABA9500
+
+#if simulazione == 0
+	#define BLINKING_MOVING 0x5F5E10 // 2Hz -> (0.5/2)sec *25e6 = 6.25e6  --> 0x5F5E10
+	#define BLINKING_ARRIVING 0x2625A0 // 5Hz -> (0.2/2)sec * 25e6 = 2.5e6 --> 0x2625A0
+#else
+	#define BLINKING_MOVING 0x7D0 // 2e3
+	#define BLINKING_ARRIVING 0x1388 // 5e3
+#endif
+
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
