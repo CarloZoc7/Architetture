@@ -62,6 +62,7 @@ int reserved = 0;
 		- 0 libero 
 		- 2 occupato e ascensore presente al piano richiesto
 */
+int floor_prec = -1; // variabile per gestire il piano di partenza in modo che posso cambiare piano tramite ascensore
 
 void RIT_IRQHandler (void)
 {					
@@ -79,6 +80,8 @@ void RIT_IRQHandler (void)
 		LED_On(2);
 		
 		LED_On(7); // accendo lo STATUS LED 
+		if ( floor_prec == -1)
+			floor_prec = elevator_floor;
 	}
 	else if((LPC_GPIO1->FIOPIN & (1<<26)) == 0 && arrived <= 0 && enable == 1 && elevator_floor!=0){	
 		/* Joystick DOWN */
@@ -117,7 +120,7 @@ void RIT_IRQHandler (void)
 				
 				if ( movement == -1 && tot_time_movement >= TOT_TIME ){
 					// arrivato al piano di destinazione
-					elevator_floor = 0; // destinazione raggiunta
+					//elevator_floor = 0; // destinazione raggiunta
 					
 					// gestione di STATUS LED all'arrivo dell'ascensore
 					// 3 seconds at 5 Hz --> 5 Hz => 0.2sec -> 0.2 * 25e6 = 0x4C4B40 
@@ -172,7 +175,7 @@ void RIT_IRQHandler (void)
 				}
 				if ( movement == 1 && tot_time_movement >= TOT_TIME){
 					// arrivato al piano
-					elevator_floor = 1;
+					// elevator_floor = 1; arrivato a destinazione
 
 					init_timer(0, BLINKING_ARRIVING);
 					enable_timer(0);
@@ -237,8 +240,20 @@ void RIT_IRQHandler (void)
 		
 			init_timer(2, BLINKING_ARRIVING); // attivo il timer 2 per il blinking in arrivo dell'ascensore
 			enable_timer(2);
-		
+
 			if ( arrived >= BLINKING_3s){
+				
+				if (elevator_floor == 0)
+					elevator_floor = 1;
+				else if ( elevator_floor == 1)
+					elevator_floor = 0;
+				else{
+					if (floor_prec == 0)
+						elevator_floor = 1;
+					else 
+						elevator_floor = 0;
+				}
+				floor_prec = -1;
 				movement = 0;
 				arrived = 0;
 				enable = 0; // disattivo il joystick

@@ -22,6 +22,7 @@ extern int inactivity_joystick;
 extern int movement;
 extern int arrived;
 extern int reserved;
+extern int inactivity_joystick;
 
 #endif /* end __RIT_H */
 /*****************************************************************************

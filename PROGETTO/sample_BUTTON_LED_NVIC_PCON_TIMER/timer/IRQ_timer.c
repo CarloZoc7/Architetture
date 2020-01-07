@@ -54,15 +54,11 @@ void TIMER0_IRQHandler (void) // timer usato per il blinking del led alle varie 
 
 void TIMER1_IRQHandler (void) // timer usato per il tragitto in caso di prenotazione da parte dell'utente
 {	
-	if (elevator_floor == 0)
-		elevator_floor = 1;
-	else
-		elevator_floor = 0;
-	
 	// setto arrived = 1 ARRIVED  per il blinking del led in stato di arrivo, in questa maniera dovrei attivare anche il time
 	arrived = 1;
 	
 	reserved = 0; // libero lo stato di occupato
+	inactivity_joystick = 0; // resetto il timer dato che riparte dallo stato precendete in partenza
   LPC_TIM1->IR = 1;			/* clear interrupt flag */ 
   return;
 }
