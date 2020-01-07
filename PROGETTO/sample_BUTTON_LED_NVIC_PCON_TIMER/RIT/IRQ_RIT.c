@@ -18,8 +18,8 @@
 #define TOT_TIME 144 // totale tempo di spostamento 7.2sec/0.05 = 144
 #define TIME_MOVING 0xABA9500// 7.2sec * 25e6 = 18e6 --> 0xABA9500
 #define INACTIVITY_TIME 1200 // 60/0.05 = 1200 --> 0x4B0
-#define BLINKING_MOVING 0xBEBC20 // 2Hz -> 0.5sec *25e6 = 12.5e6 --> 0xBEBC20
-#define BLINKING_ARRIVING 0x4C4B40 // 5Hz -> 0.2sec * 25e6 = 5e6 --> 0x4C4B40
+#define BLINKING_MOVING 0x5F5E10 // 2Hz -> (0.5/2)sec *25e6 = 6.25e6  --> 0x5F5E10
+#define BLINKING_ARRIVING 0x2625A0 // 5Hz -> (0.2/2)sec * 25e6 = 2.5e6 --> 0x2625A0
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
