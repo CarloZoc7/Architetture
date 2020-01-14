@@ -87,11 +87,13 @@ void reset_timer( uint8_t timer_num )
 	regVal = LPC_TIM0->TCR;
 	regVal |= 0x02;
 	LPC_TIM0->TCR = regVal;
+	LPC_TIM0->TC = 0;
   }
   else if ( timer_num == 1)
   {
 	regVal = LPC_TIM1->TCR;
 	regVal |= 0x02;
+	LPC_TIM1->TC = 0;
 	LPC_TIM1->TCR = regVal;
   } else if( timer_num == 2){
 	regVal = LPC_TIM2->TCR;
@@ -162,7 +164,7 @@ uint32_t init_timer ( uint8_t timer_num, uint32_t TimerInterval )
 //	 <i> 1 Stop on MR3: the TC and PC will be stopped and TCR[3] will be set to 0 if MR3 matches the TC
 //	 <i> 0 Feature disabled.
 //   </e>
-	LPC_TIM0->MCR = 0x0003;
+	LPC_TIM0->MCR = 0x03;
 // </h>
 //*** <<< end of configuration section >>>    ***
 	
@@ -178,6 +180,7 @@ uint32_t init_timer ( uint8_t timer_num, uint32_t TimerInterval )
 	LPC_TIM1->MCR = 0x0007;				/* Interrupt and Reset on MR0 */
 
 	NVIC_EnableIRQ(TIMER1_IRQn);
+	
 	return (1);
   } else if ( timer_num == 2)
 	{
@@ -186,9 +189,9 @@ uint32_t init_timer ( uint8_t timer_num, uint32_t TimerInterval )
 
 	NVIC_EnableIRQ(TIMER2_IRQn);
 	return (1);
-	} else if ( timer_num == 3){
-	LPC_TIM3->MR2 = TimerInterval;
-	LPC_TIM3->MCR = 0x1C0;
+	} else if ( timer_num == 3){ // timer 3 crea una situazione di conflitto
+	LPC_TIM3->MR1 = TimerInterval;
+	LPC_TIM3->MCR = 0x00000;
 		
 	NVIC_EnableIRQ(TIMER3_IRQn);
 	return (1);

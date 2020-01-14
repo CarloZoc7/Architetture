@@ -19,6 +19,13 @@ REQUEST PANEL PIANO 1:
 	- alarm led --> LED 1
 */
 
+void EINT0_IRQHandler(void){
+	NVIC_DisableIRQ(EINT0_IRQn);		/* disable Button interrupts			 */
+	LPC_PINCON->PINSEL4    &= ~(1 << 22);     /* GPIO pin selection */
+	down=1;
+	LPC_SC->EXTINT &= (1 << 1); 
+}
+
 void EINT1_IRQHandler (void)	  	/* KEY1														 */
 {																	/* REQUEST FOR FLOOR 0						 */
 	NVIC_DisableIRQ(EINT1_IRQn);		/* disable Button interrupts			 */
@@ -34,5 +41,6 @@ void EINT2_IRQHandler (void)	  	/* KEY2														 */
 	down2=1;
   LPC_SC->EXTINT &= (1 << 2);     /* clear pending interrupt         */    
 }
+
 
 

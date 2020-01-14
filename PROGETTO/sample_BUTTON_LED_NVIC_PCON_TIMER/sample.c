@@ -16,6 +16,8 @@
 #include "timer/timer.h"
 #include "joystick/joystick.h"
 #include "RIT/RIT.h"
+#include "dac/dac.h"
+#include "adc/adc.h"
 
 /* Led external variables from funct_led */
 extern unsigned char led_value;					/* defined in funct_led								*/
@@ -26,6 +28,7 @@ extern unsigned char led_value;					/* defined in funct_led								*/
 int main (void) {
   	
 
+
 	SystemInit();  												/* System Initialization (i.e., PLL)  */
   LED_init();                           /* LED Initialization                 */
   BUTTON_init();												/* BUTTON Initialization              */
@@ -34,6 +37,8 @@ int main (void) {
 	// impostato a 50ms --> 50e-3 * 100e6 = 5e6 --> 0x004C4B40
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
 	enable_RIT();
+	DAC_init();
+	ADC_init();
 	
 	LPC_SC->PCON |= 0x1;									/* power-down	mode										*/
 	LPC_SC->PCON &= 0xFFFFFFFFD;						

@@ -20,9 +20,10 @@ extern void RIT_IRQHandler (void);
 
 extern int inactivity_joystick;
 extern int movement;
-extern int arrived;
+extern float arrived;
 extern int reserved;
 extern int inactivity_joystick;
+extern int alarm_case;
 
 #endif /* end __RIT_H */
 /*****************************************************************************

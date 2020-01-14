@@ -13,16 +13,18 @@
 #include "../button_EXINT/button.h"
 #include "../timer/timer.h"
 
-#define simulazione 1
+#define simulazione 0
 
 #define BLINKING_3s 60 // 3/0.05 = 60 --> 0x03C 60 interrupt i 3 sec 
 #define TOT_TIME 144 // totale tempo di spostamento 7.2sec/0.05 = 144
 #define INACTIVITY_TIME 1200 // 60/0.05 = 1200 --> 0x4B0
 #define TIME_MOVING 0xABA9500// 7.2sec * 25e6 = 18e6 --> 0xABA9500
+#define FREQ_SPEAKER 1263// 440--> (1/440*45) *25e6 = 1263
 
 #if simulazione == 0
-	#define BLINKING_MOVING 0x5F5E10 // 2Hz -> (0.5/2)sec *25e6 = 6.25e6  --> 0x5F5E10
+	#define BLINKING_MOVING 5 // 2Hz -> (0.5/2)/0.05 = 5 
 	#define BLINKING_ARRIVING 0x2625A0 // 5Hz -> (0.2/2)sec * 25e6 = 2.5e6 --> 0x2625A0
+	#define ALARM_BLINKING 3 // 4hz --> (1/4=0.25 / 2)/0.05= 2.5 all'incirca 3 
 #else
 	#define BLINKING_MOVING 0x7D0 // 2e3
 	#define BLINKING_ARRIVING 0x1388 // 5e3
@@ -48,7 +50,7 @@ int movement = 0;	// indica la direzione in cui si sta muovendo l'ascendore, può
 	*/
 float tot_time_movement = 0; // tempo totale in movimento
 int inactivity_joystick = 0; // variable per indicare l'avvio del timer per l'inutilizzo o meno
-int arrived = 0; // variabile per il conteggio del led in caso di arrivo 
+float arrived = 0; // variabile per il conteggio del led in caso di arrivo 
 /*
 	- (-1) sono in movimento
 	- >0 sono arrivato a destinazione e parte il conteggio del tempo per il blinking del led di 3s
@@ -57,6 +59,12 @@ int arrived = 0; // variabile per il conteggio del led in caso di arrivo
 int enable = 0; // variabile per attivare il joystick
 volatile int down = 0; // variabile per la pressione dei pulsanti KEY1
 volatile int down2 = 0;
+volatile int down3 = 0;
+
+int led_blinking = 0;
+int alarm_case = 0;
+int emergency_case = 0;
+
 volatile int elevator_floor = 0;	// variabile globale che indica dove si trova l'ascensore
 	/*
 		-(0) floor 0
@@ -69,8 +77,14 @@ int reserved = 0;
 		- 1 per avere l'ascensore occupato tramite pulsante da uno dei 2 piani
 		- 0 libero 
 		- 2 occupato e ascensore presente al piano richiesto
+		- (-1) situazione di alarm attiva
 */
 int floor_prec = -1; // variabile per gestire il piano di partenza in modo che posso cambiare piano tramite ascensore
+
+/* FUNZIONI */
+void status_led(void);
+void status_led_alarm(void);
+void alarm_leds(int);
 
 void RIT_IRQHandler (void)
 {					
@@ -81,13 +95,9 @@ void RIT_IRQHandler (void)
 		enable = 1;
 		inactivity_joystick = 0;
 		// eventualmente spengo gli ALARM LED
-		LED_Off(1); // spengo gli alarm LED 
-		LED_Off(3); // spengo gli alarm LED
-		
-		LED_On(0); // accendo i reserved LED
-		LED_On(2);
-		
-		LED_On(7); // accendo lo STATUS LED 
+		alarm_leds(0);
+		LED_On(7); // accendo lo status led
+	
 		if ( floor_prec == -1)
 			floor_prec = elevator_floor;
 	}
@@ -105,9 +115,7 @@ void RIT_IRQHandler (void)
 		
 		if(selectDOWN > 0){
 				/* here your action */
-				init_timer(0, BLINKING_MOVING);
-				enable_timer(0);
-			
+
 				// accendo i RESERVED LED poiché sono in movimento e l'ascensore è occupato
 				LED_On(0);
 				LED_On(2);
@@ -125,6 +133,8 @@ void RIT_IRQHandler (void)
 					tot_time_movement--;
 					arrived = -1;
 				}
+				// blinking status led 
+				status_led();
 				
 				if ( movement == -1 && tot_time_movement >= TOT_TIME ){
 					// arrivato al piano di destinazione
@@ -132,7 +142,7 @@ void RIT_IRQHandler (void)
 					
 					// gestione di STATUS LED all'arrivo dell'ascensore
 					// 3 seconds at 5 Hz --> 5 Hz => 0.2sec -> 0.2 * 25e6 = 0x4C4B40 
-					init_timer(0, 0x4C4B40); // aggiungo frequenza del LED al al timer 2
+					init_timer(0, BLINKING_ARRIVING); // aggiungo frequenza del LED al al timer 2
 					enable_timer(0);
 					
 					movement = 0;
@@ -165,9 +175,7 @@ void RIT_IRQHandler (void)
 		
 		if(selectUP > 0){
 				/* here your action */
-				init_timer(0, BLINKING_MOVING); // 2Hz -> 0.5s --> 0.5*25*1e6 = 12.5e6 --> 0xBEBC20
-				enable_timer(0);
-					
+
 				if (movement == 0 && tot_time_movement == 0){
 					movement = 1;
 					tot_time_movement++;
@@ -181,12 +189,14 @@ void RIT_IRQHandler (void)
 					tot_time_movement--;
 					arrived = -1;
 				}
+				// blinking dello status led 
+				status_led();
 				if ( movement == 1 && tot_time_movement >= TOT_TIME){
 					// arrivato al piano
 					// elevator_floor = 1; arrivato a destinazione
 
-					init_timer(0, BLINKING_ARRIVING);
-					enable_timer(0);
+					init_timer(2, BLINKING_ARRIVING);
+					enable_timer(2);
 			
 					movement = 0; // ascensore non più in movimento 
 					tot_time_movement = 0; 
@@ -204,7 +214,11 @@ void RIT_IRQHandler (void)
 	else{
 			selectUP=0;
 			selectDOWN=0;
-			// stacco il timer per il blinking di status Led
+			
+			if (alarm_case == 1){ // se sono nella situazione di alarm faccio il blinking del led a 4 hz 
+				// blinking in stato di allarme da usare 
+			}
+		
 			if (reserved != 1) // se non è stato riservato da qualcuno
 				disable_timer(0);
 			
@@ -221,19 +235,23 @@ void RIT_IRQHandler (void)
 			}
 			
 			if( inactivity_joystick >= INACTIVITY_TIME && (reserved == 2 || reserved == 0)){
-				if(arrived == -1){ // se non sono arrivato a uno dei due piani accendo l'ALARM LED  
-						LED_On(1); // accendo ALARM LED
-						LED_On(3); // accendo ALARM LED
-				}
+				LED_Off(0); // spengo gli status led 
+				LED_Off(2);
+				
+				if(arrived == -1) // se non sono arrivato a uno dei due piani accendo l'ALARM LED  
+					alarm_leds(1);
 				
 				disable_timer(2); // spengo il timer per il blinking del led
-				disable_timer(0);
-				LED_Off(7); // spengo STATUS LED
-				LED_Off(0); // spengo RESERVED LED
-				LED_Off(2); // spengo RESERVED LED
-				
+				if ( elevator_floor == 2){
+					init_timer(0, FREQ_SPEAKER);
+					enable_timer(0);
+					alarm_case = 1;
+					emergency_case = 1;
+				}
 				inactivity_joystick = 0;
 				enable = 0; // disattivo il joystick per inattività
+				
+				reserved = -1;
 				
 				if(arrived != -1)
 					reserved = 0; // rendo lo stato libero 
@@ -269,13 +287,17 @@ void RIT_IRQHandler (void)
 				disable_timer(2);
 				LED_Off(7); // spengo lo status LED
 				// reserved led verranno spenti dopo un minuto che l'ascensore è arrivato al piano
-			}
-			
+			}		
 	}
+	if (movement != 0 && reserved == 1 && alarm_case == 0)
+		status_led(); // blinking status led in caso l'ascensore si muova tramite prenotazione da reserved panel
+	
+	if (alarm_case == 1)
+		status_led_alarm();
 
 // ---> BUTTON MANAGEMENT <---
 	/* button management */
-		if(down!=0 && arrived <= 0 && reserved == 0){ 
+		if(down!=0 && arrived <= 0 && (reserved == 0 || reserved == -1)){ 
 		if((LPC_GPIO2->FIOPIN & (1<<11)) == 0){	/* KEY1 pressed _ FLOOR 1 - ascensore libero e non in movimento tramite joystick e non riservato*/
 			down++;				
 			switch(down){
@@ -285,7 +307,7 @@ void RIT_IRQHandler (void)
 					LED_On(0);
 					LED_On(2);
 					reserved = 2; // in questa maniera sono tranquillo che posso usare il joystick e sono allo stesso piano dell'ascensore
-					if ( elevator_floor != 1){ // se l'ascensore è al piano opposto del 1° piano, va in movimento
+					if ( elevator_floor != 1 && alarm_case == 0){ // se l'ascensore è al piano opposto del 1° piano, va in movimento
 							// avvio la procedure per arrivare al piano opposto
 							reserved = 1; // finchè non arriva al piano indicato non posso utilizzare il joystick 
 							movement = 1; // ascensore in salita dal piano 0 al piano 1
@@ -293,8 +315,22 @@ void RIT_IRQHandler (void)
 							init_timer(1, TIME_MOVING); // tempo di spostamento pari a 7.2sec * 25e6 = 180e6 --> ABA9500
 							enable_timer(1);
 							
-							init_timer(0, BLINKING_MOVING);
-							enable_timer(0);
+							// accendo lo status led
+							status_led();
+							
+					} else if (elevator_floor == 2){ // situazione di transito tra una parte e l' altra
+							disable_timer(3); // spengo il loudspeaker
+							status_led();
+							// sblocco la situazione di alarm 
+							alarm_leds(0);
+						
+						if( movement == 1 && floor_prec == 1){
+							init_timer(1, tot_time_movement*25000000*0.05);
+							enable_timer(1);
+						} else{
+							init_timer(1, (7.2-tot_time_movement*0.05)*25000000);
+							enable_timer(1);
+						}
 							
 					}
 					break;
@@ -308,7 +344,7 @@ void RIT_IRQHandler (void)
 			LPC_PINCON->PINSEL4    |= (1 << 22);     /* External interrupt 0 pin selection */
 		}
 	}
-	if(down2 != 0 && arrived <= 0 && reserved == 0){
+	if(down2 != 0 && arrived <= 0 && (reserved == 0 || reserved == -1)){
 		if((LPC_GPIO2->FIOPIN & (1<<12)) == 0){ /* KEY2 pressed _ FLOOR 0 - ascensore libero e non in movimento tramite joystick*/
 			down2++;				
 			switch(down2){
@@ -318,7 +354,7 @@ void RIT_IRQHandler (void)
 					LED_On(2);
 					LED_On(0);
 					reserved = 2;
-					if (elevator_floor != 0){ // se l'ascensore è al piano opposto al piano terra, avvio la procedura in movimento
+					if (elevator_floor != 0 && alarm_case == 0){ // se l'ascensore è al piano opposto al piano terra, avvio la procedura in movimento
 					// avvio la procedura del piano sottostante
 						
 							reserved = 1;
@@ -327,9 +363,18 @@ void RIT_IRQHandler (void)
 							init_timer(1, TIME_MOVING); // tempo di spostamento pari a 7.2sec * 25e6 = 180e6 --> ABA9500
 							enable_timer(1);
 							
-							init_timer(0, BLINKING_MOVING);
-							enable_timer(0);
+							status_led();
+					} else if (elevator_floor == 2){ // ascensore in movimento
+						alarm_leds(0); // spengo la situazione di allarme
+						if( movement == 1 && floor_prec == 0){
+							init_timer(1, tot_time_movement*25000000*0.05);
+							enable_timer(1);
+						} else{
+							init_timer(1, (7.2-tot_time_movement*0.05)*25000000);
+							enable_timer(1);
+						}
 					}
+					
 					break;
 				default:
 					break;;
@@ -342,9 +387,91 @@ void RIT_IRQHandler (void)
 			LPC_PINCON->PINSEL4    |= (1 << 24);     /* External interrupt 0 pin selection */
 		}
 	}
+		if(down3 != 0)
+	{
+		if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){ // KEY INT0 pressed
+			down3++;
+			switch(down3){
+				case 2:	// scenario in cui sia premuto per caso o per sbloccare la situazione di alarm 
+					if (alarm_case == 1){
+						// sblocco la situazione di alarm, altrimenti nulla 
+						disable_timer(3); // spengo loudspeaker
+						alarm_case = 0;
+						inactivity_joystick = 0;
+						alarm_leds(0);
+					}
+					break;
+				case 40: // il pulsante deve essere premuto per 2sec--> 2/0.05 = 40 interrupt di RIT
+						emergency_case = 1;
+						down3=0;
+						reset_timer(0);
+						status_led_alarm();
+						enable = 0; // disattivo il joystick per bloccare la posizione dell'ascensore
+						alarm_leds(1);
+						
+						// loudspeaker attivato alla frequenza di 440Hz
+						reset_timer(0);
+						init_timer(0, FREQ_SPEAKER);
+						enable_timer(0);
+						alarm_case = 1;
+						reserved = 0;
+					break;
+				default:
+					break;
+			}
+			
+		}
+	else{
+		down3 = 0;
+		NVIC_EnableIRQ(EINT0_IRQn);
+		LPC_PINCON->PINSEL4     |= (1 << 20); 
+		LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
+		return;
+		}
+	}
   LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
 	
   return;
+}
+
+void status_led(){
+		// ascendore in movimento
+	if( led_blinking % BLINKING_MOVING == 0)
+			LED_On(7);
+	else
+			LED_Off(7);
+	led_blinking++;
+	if(led_blinking == 1000)
+		led_blinking = 0;
+}
+
+void status_led_alarm(){
+	if( led_blinking % ALARM_BLINKING == 0)
+		LED_On(7);
+	else
+		LED_Off(7);
+	led_blinking++;
+	if(led_blinking == 1000)
+		led_blinking = 0;
+}
+
+void alarm_leds(int on){
+	// spengo gli status led e accendo gli alarm led
+	if (on == 1){
+		LED_On(1); // accendo gli alarm led
+		LED_On(3);
+	
+		LED_Off(0); // spengo gli status led
+		LED_Off(2);
+		LED_Off(7);
+	}
+	else {
+		LED_On(0); // accendo gli status led
+		LED_On(2);
+	
+		LED_Off(1); // spengo gli alarm led
+		LED_Off(3);
+	}
 }
 
 /******************************************************************************
