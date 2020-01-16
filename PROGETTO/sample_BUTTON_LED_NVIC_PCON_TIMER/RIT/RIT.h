@@ -24,6 +24,7 @@ extern float arrived;
 extern int reserved;
 extern int inactivity_joystick;
 extern int alarm_case;
+extern int freq_notes[];
 
 #endif /* end __RIT_H */
 /*****************************************************************************

@@ -190,7 +190,7 @@ uint32_t init_timer ( uint8_t timer_num, uint32_t TimerInterval )
 	NVIC_EnableIRQ(TIMER2_IRQn);
 	return (1);
 	} else if ( timer_num == 3){ // timer 3 crea una situazione di conflitto
-	LPC_TIM3->MR1 = TimerInterval;
+	LPC_TIM3->MR0 = TimerInterval;
 	LPC_TIM3->MCR = 0x00003;
 		
 	NVIC_EnableIRQ(TIMER3_IRQn);

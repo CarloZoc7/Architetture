@@ -80,17 +80,19 @@ int reserved = 0;
 		- (-1) situazione di alarm attiva
 */
 int floor_prec = -1; // variabile per gestire il piano di partenza in modo che posso cambiare piano tramite ascensore
+int freq_notes[2] = {440, 440};
 
 /* FUNZIONI */
 void status_led(void);
 void status_led_alarm(void);
 void alarm_leds(int);
+void loudspeaker(void);
 
 void RIT_IRQHandler (void)
 {					
 	static int selectUP=0;	
 	static int selectDOWN=0;
-	
+
 	if ((LPC_GPIO1->FIOPIN & (1<<25)) == 0 && (reserved == 2 || reserved == -1) && arrived<=0 ) { // attivo il joystick prima dell'utilizzo, e se è stato risarvato ed è allo stesso piano dell'utente
 		enable = 1;
 		inactivity_joystick = 0;
@@ -239,9 +241,9 @@ void RIT_IRQHandler (void)
 					alarm_leds(1);
 				
 				disable_timer(2); // spengo il timer per il blinking del led
+				loudspeaker();
 				if ( elevator_floor == 2){
-					init_timer(0, FREQ_SPEAKER);
-					enable_timer(0);
+					loudspeaker();
 					alarm_case = 1;
 					emergency_case = 1;
 				}
@@ -410,8 +412,7 @@ void RIT_IRQHandler (void)
 						
 						// loudspeaker attivato alla frequenza di 440Hz
 						reset_timer(0);
-						init_timer(0, FREQ_SPEAKER);
-						enable_timer(0);
+						loudspeaker();
 						alarm_case = 1;
 						reserved = 0;
 					break;
@@ -470,6 +471,17 @@ void alarm_leds(int on){
 	
 		LED_Off(1); // spengo gli alarm led
 		LED_Off(3);
+	}
+}
+
+void loudspeaker(){
+	int note;
+	int i;
+	for(i=0; i<0; i++){
+			reset_timer(0);
+			note = 1/(freq_notes[i]*45)*25000000;
+			init_timer(0, note);
+			enable_timer(0);
 	}
 }
 

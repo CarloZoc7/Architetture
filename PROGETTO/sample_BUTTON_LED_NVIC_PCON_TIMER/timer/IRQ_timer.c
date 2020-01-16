@@ -13,11 +13,21 @@
 #include "../RIT/RIT.h"
 #include "../button_EXINT/button.h"
 #include "../dac/dac.h"
+#include "../adc/adc.h"
 #include "../TouchPanel/TouchPanel.h"
 #include "../GLCD/GLCD.h"
+#include "stdio.h"
 
 int i = 0;
 extern int elevator_floor;
+int f[8] = {262, 294, 330, 349, 392, 440, 494, 523};
+char note[8] = {'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'};
+char text_note1[10] = "\0";
+char text_note2[10] = "\0";
+int enable_screen = 0;
+int note1 = 6;
+int note2 = 6;
+int select =0;
 
 uint16_t SinTable[45] =                                       /* ÕýÏÒ±í                       */
 {
@@ -88,36 +98,66 @@ void TIMER2_IRQHandler (void){ // timer utilizzato per il blinking in arrivo
 }
 
 void TIMER3_IRQHandler(void){
-	static int clear = 0;
-	static int draw = 0;
-	char time_in_char[5] = "";
-  
+	
 	getDisplayPoint(&display, Read_Ads7846(), &matrix ) ;
-	if(display.x <= 240 && display.x > 0){
-		if(display.y < 280){
-			TP_DrawPoint(display.x,display.y);
-  		GUI_Text(200, 0, (uint8_t *) "     ", Blue, Blue);
-			clear = 0;
-			draw = 1;
+	
+	sprintf(text_note1, " %d - %c ", f[note1], note[note1]);
+	sprintf(text_note2, " %d - %c ", f[note2], note[note2]);
+	
+	if(display.x <=220 && display.x >=180 && display.y <=70 && display.y >=30){
+		LCD_Clear(Blue);
+		enable_screen = 1;
+		GUI_Text(80, 20, (uint8_t *) "Maintenance", Yellow, Blue);
+		GUI_Text(80, 60, (uint8_t *) " Select note 1 ", Blue, White);
+		GUI_Text(80, 100, (uint8_t *) text_note1, Blue, White);
+		
+		GUI_Text(80, 120, (uint8_t *) "____________", White, Blue);
+		
+		GUI_Text(80, 160, (uint8_t *) " Select note 2 ", White, Blue);
+		GUI_Text(80, 200, (uint8_t *) text_note2, White, Blue);
+		
+	
+		GUI_Text(60, 280, (uint8_t *) " Save ", White, Green);
+		GUI_Text(180, 280, (uint8_t *)" quit ", White, Red);
+	}
+	
+	// selezione zone di note
+	if(display.x < 200 && display.x >=70 && enable_screen == 1){
+		if(display.y < 130 && display.y >=10){
+			GUI_Text(80, 60, (uint8_t *) " Select note 1 ", Blue, White);
+			GUI_Text(80, 100, (uint8_t *) text_note1, Blue, White);
+			GUI_Text(80, 160, (uint8_t *) " Select note 2 ", White, Blue);
+			GUI_Text(80, 200, (uint8_t *) text_note2, White, Blue);
 		}
-		else{				
-			if(draw!=0){
-				clear++;
-				if(clear%20 == 0){
-					GUI_Text(200, 0, (uint8_t *) time_in_char, White, Blue);
-					if(clear == 200){	/* 1 seconds = 200 times * 500 us*/
-						LCD_Clear(Blue);
-						GUI_Text(0, 280, (uint8_t *) " touch here : 1 sec to clear ", Blue, White);			
-						clear = 0;
-						draw = 0;
-					}
-				}
-			}
+		else if(display.y<290 && display.y>=130){				
+			GUI_Text(80, 60, (uint8_t *) " Select note 1 ", White, Blue);
+			GUI_Text(80, 100, (uint8_t *) text_note1, White, Blue);
+			GUI_Text(80, 160, (uint8_t *) " Select note 2 ", Blue, White);
+			GUI_Text(80, 200, (uint8_t *) text_note2, Blue, White);
 		}
 	}
-	else{
-		//do nothing if touch returns values out of bounds
+	
+	// selezione tasti 
+	if(display.y>=240 && display.y<=290 && enable_screen == 1){
+		if(display.x >=50 && display.x <90){ // tasto save
+			freq_notes[0] = f[note1];
+			freq_notes[1] = f[note2];
+			sprintf(text_note1, " %d - %c ", f[note1], note[note1]);
+			sprintf(text_note2, " %d - %c ", f[note2], note[note2]);
+			// salvo ed esco
+			enable_screen = 0;
+			select = 0;
+			LCD_Clear(Black);
+			GUI_Text(200, 50, (uint8_t *) " ON ", White, Black);
+		}
+		else if(display.x >= 180 && display.x <=200){ // tasto quit
+			enable_screen = 0;
+			select = 0;
+			LCD_Clear(Black);
+			GUI_Text(200, 50, (uint8_t *) " ON ", White, Black);
+		}
 	}
+	ADC_start_conversion();
 	LPC_TIM3->IR = 1;			/* clear interrupt flag */
   return;;
 }
