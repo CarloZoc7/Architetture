@@ -16,6 +16,10 @@
 ".\lib_dac.o"
 ".\irq_adc.o"
 ".\lib_adc.o"
+".\touchpanel.o"
+".\hzlib.o"
+".\glcd.o"
+".\asciilib.o"
 --strict --scatter ".\sample.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

@@ -13,6 +13,8 @@
 #include "../RIT/RIT.h"
 #include "../button_EXINT/button.h"
 #include "../dac/dac.h"
+#include "../TouchPanel/TouchPanel.h"
+#include "../GLCD/GLCD.h"
 
 int i = 0;
 extern int elevator_floor;
@@ -86,7 +88,36 @@ void TIMER2_IRQHandler (void){ // timer utilizzato per il blinking in arrivo
 }
 
 void TIMER3_IRQHandler(void){
-
+	static int clear = 0;
+	static int draw = 0;
+	char time_in_char[5] = "";
+  
+	getDisplayPoint(&display, Read_Ads7846(), &matrix ) ;
+	if(display.x <= 240 && display.x > 0){
+		if(display.y < 280){
+			TP_DrawPoint(display.x,display.y);
+  		GUI_Text(200, 0, (uint8_t *) "     ", Blue, Blue);
+			clear = 0;
+			draw = 1;
+		}
+		else{				
+			if(draw!=0){
+				clear++;
+				if(clear%20 == 0){
+					GUI_Text(200, 0, (uint8_t *) time_in_char, White, Blue);
+					if(clear == 200){	/* 1 seconds = 200 times * 500 us*/
+						LCD_Clear(Blue);
+						GUI_Text(0, 280, (uint8_t *) " touch here : 1 sec to clear ", Blue, White);			
+						clear = 0;
+						draw = 0;
+					}
+				}
+			}
+		}
+	}
+	else{
+		//do nothing if touch returns values out of bounds
+	}
 	LPC_TIM3->IR = 1;			/* clear interrupt flag */
   return;;
 }

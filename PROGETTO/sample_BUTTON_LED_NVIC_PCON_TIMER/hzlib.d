@@ -1,3 +1,3 @@
-hzlib.o: GLCD\HzLib.c
-hzlib.o: GLCD\HzLib.h
-hzlib.o: C:\Keil\ARM\RV31\INC\string.h
+.\hzlib.o: GLCD\HzLib.c
+.\hzlib.o: GLCD\HzLib.h
+.\hzlib.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
