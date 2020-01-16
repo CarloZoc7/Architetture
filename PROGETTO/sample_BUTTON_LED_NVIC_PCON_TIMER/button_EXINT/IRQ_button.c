@@ -7,6 +7,7 @@
 
 extern int down;
 extern int down2;
+extern int down3;
 /*
 REQUEST PANEL PIANO 0:
 	- button --> KEY 1 pin numero 11
@@ -21,8 +22,8 @@ REQUEST PANEL PIANO 1:
 
 void EINT0_IRQHandler(void){
 	NVIC_DisableIRQ(EINT0_IRQn);		/* disable Button interrupts			 */
-	LPC_PINCON->PINSEL4    &= ~(1 << 22);     /* GPIO pin selection */
-	down=1;
+	LPC_PINCON->PINSEL4    &= ~(1 << 20);     /* GPIO pin selection */
+	down3=1;
 	LPC_SC->EXTINT &= (1 << 1); 
 }
 

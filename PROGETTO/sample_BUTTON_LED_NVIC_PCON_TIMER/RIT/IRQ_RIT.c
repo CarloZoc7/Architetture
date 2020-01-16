@@ -91,7 +91,7 @@ void RIT_IRQHandler (void)
 	static int selectUP=0;	
 	static int selectDOWN=0;
 	
-	if ((LPC_GPIO1->FIOPIN & (1<<25)) == 0 && reserved == 2 && arrived<=0 ) { // attivo il joystick prima dell'utilizzo, e se è stato risarvato ed è allo stesso piano dell'utente
+	if ((LPC_GPIO1->FIOPIN & (1<<25)) == 0 && (reserved == 2 || reserved == -1) && arrived<=0 ) { // attivo il joystick prima dell'utilizzo, e se è stato risarvato ed è allo stesso piano dell'utente
 		enable = 1;
 		inactivity_joystick = 0;
 		// eventualmente spengo gli ALARM LED
@@ -218,9 +218,6 @@ void RIT_IRQHandler (void)
 			if (alarm_case == 1){ // se sono nella situazione di alarm faccio il blinking del led a 4 hz 
 				// blinking in stato di allarme da usare 
 			}
-		
-			if (reserved != 1) // se non è stato riservato da qualcuno
-				disable_timer(0);
 			
 			// conteggio per inutilizzo del joystick
 			if ( arrived <= 0 && (reserved == 2 || reserved == 0)){
@@ -262,7 +259,6 @@ void RIT_IRQHandler (void)
 			arrived++;
 			
 			disable_timer(1); // disattivo il timer 1 
-			disable_timer(0); // disattivo il timer 0 per il blinking del timer in movimento
 		
 			init_timer(2, BLINKING_ARRIVING); // attivo il timer 2 per il blinking in arrivo dell'ascensore
 			enable_timer(2);
@@ -281,6 +277,7 @@ void RIT_IRQHandler (void)
 				}
 				floor_prec = -1;
 				movement = 0;
+				tot_time_movement = 0;
 				arrived = 0;
 				enable = 0; // disattivo il joystick
 				 // avvio il lampeggiare nella situazione di arrivo dell'ascensore
@@ -366,6 +363,7 @@ void RIT_IRQHandler (void)
 							status_led();
 					} else if (elevator_floor == 2){ // ascensore in movimento
 						alarm_leds(0); // spengo la situazione di allarme
+						reset_timer(1);
 						if( movement == 1 && floor_prec == 0){
 							init_timer(1, tot_time_movement*25000000*0.05);
 							enable_timer(1);
@@ -387,7 +385,8 @@ void RIT_IRQHandler (void)
 			LPC_PINCON->PINSEL4    |= (1 << 24);     /* External interrupt 0 pin selection */
 		}
 	}
-		if(down3 != 0)
+	
+	if(down3 != 0 && movement != 0)
 	{
 		if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){ // KEY INT0 pressed
 			down3++;

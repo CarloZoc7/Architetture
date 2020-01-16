@@ -64,7 +64,7 @@ void TIMER1_IRQHandler (void) // timer usato per il tragitto in caso di prenotaz
 		
 	reserved = 0; // libero lo stato di occupato
 	inactivity_joystick = 0; // resetto il timer dato che riparte dallo stato precendete in partenza
-
+	alarm_case = 0;
   LPC_TIM1->IR = 1;			/* clear interrupt flag */ 
   return;
 }
