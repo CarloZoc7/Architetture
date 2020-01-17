@@ -54,6 +54,8 @@ void disable_timer( uint8_t timer_num )
   {
 	LPC_TIM0->IR = (1<<0);
 	LPC_TIM0->TCR = 0;
+	LPC_TIM0->TC = 0;
+	LPC_TIM0->MCR = 0x00;
 	}
   else if (timer_num == 1)
   {

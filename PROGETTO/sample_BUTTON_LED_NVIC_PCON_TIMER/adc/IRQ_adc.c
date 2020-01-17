@@ -24,26 +24,24 @@ unsigned short AD_current;
 unsigned short AD_last = 0xFF;     /* Last converted value               */
 
 int value;
-int last_note1 = 6; // di default sono settate a 440
-int last_note2 = 6; // di default sono settate a 440
 char text[10];
 
 void ADC_IRQHandler(void) {
 
 	int value;
 	char text[12] = "\0";
-	int f[8] = {262, 294, 330, 349, 392, 440, 494, 523};
-	char note[8] = {'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'};
+	int f[8] = {523, 494, 440, 392, 349, 330, 294, 262};
+	char note[8] = {'C', 'B', 'A', 'G', 'F', 'E', 'D', 'C'};
   AD_current = ((LPC_ADC->ADGDR>>4) & 0xFFF);/* Read Conversion Result             */
-	value = AD_current*8/0xFFF;
+	value = AD_current/0x200;
 	
-	if(select == 1 && last_note1 != value){
+	if(select == 1 && note1 != value){
 			sprintf(text," %d - %c ", f[value], note[value]);
 			GUI_Text(80, 100, (uint8_t *) text , Blue, White);
-			last_note1 = value;
-	} else if(select == 2 && last_note2 != value){
+			note1 = value;
+	} else if(select == 2 && note2 != value){
 			sprintf(text," %d - %c ", f[value], note[value]);
 			GUI_Text(80, 200, (uint8_t *) text , Blue, White);
-			last_note2 = value;
+			note2 = value;
 	}
 }

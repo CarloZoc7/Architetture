@@ -20,13 +20,13 @@
 
 int i = 0;
 extern int elevator_floor;
-int f[8] = {262, 294, 330, 349, 392, 440, 494, 523};
-char note[8] = {'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'};
+int f[8] = {523, 494, 440, 392, 349, 330, 294, 262};
+char note[8] = {'C', 'B', 'A', 'G', 'F', 'E', 'D', 'C'};
 char text_note1[10] = "\0";
 char text_note2[10] = "\0";
 int enable_screen = 0;
-int note1 = 6;
-int note2 = 6;
+int note1 = 2;
+int note2 = 2;
 int select =0;
 
 uint16_t SinTable[45] =                                       /* 正弦表                       */
@@ -50,8 +50,8 @@ uint16_t SinTable[45] =                                       /* 正弦表         
 
 void TIMER0_IRQHandler (void) // timer usato per il loudspaker
 {	static int ticks = 0;
-	//int value30 = SinTable[ticks]*0.30; // considero il 30%
-	DAC_convert(SinTable[ticks]<<6);
+	int value30 = SinTable[ticks]*0.30; // considero il 30%
+	DAC_convert(value30<<6);
 	ticks++;
 	if(ticks==45) ticks=0;
 	LPC_TIM0->IR = 1;			/* clear interrupt flag */
@@ -73,7 +73,7 @@ void TIMER1_IRQHandler (void) // timer usato per il tragitto in caso di prenotaz
 {	
 	// setto arrived = 1 ARRIVED  per il blinking del led in stato di arrivo, in questa maniera dovrei attivare anche il time
 	arrived = 1;
-		
+	LED_Off(7);
 	reserved = 0; // libero lo stato di occupato
 	inactivity_joystick = 0; // resetto il timer dato che riparte dallo stato precendete in partenza
 	alarm_case = 0;
@@ -108,8 +108,8 @@ void TIMER3_IRQHandler(void){
 		LCD_Clear(Blue);
 		enable_screen = 1;
 		GUI_Text(80, 20, (uint8_t *) "Maintenance", Yellow, Blue);
-		GUI_Text(80, 60, (uint8_t *) " Select note 1 ", Blue, White);
-		GUI_Text(80, 100, (uint8_t *) text_note1, Blue, White);
+		GUI_Text(80, 60, (uint8_t *) " Select note 1 ", White, Blue);
+		GUI_Text(80, 100, (uint8_t *) text_note1, White, Blue);
 		
 		GUI_Text(80, 120, (uint8_t *) "____________", White, Blue);
 		
@@ -128,27 +128,32 @@ void TIMER3_IRQHandler(void){
 			GUI_Text(80, 100, (uint8_t *) text_note1, Blue, White);
 			GUI_Text(80, 160, (uint8_t *) " Select note 2 ", White, Blue);
 			GUI_Text(80, 200, (uint8_t *) text_note2, White, Blue);
+			select = 1;
 		}
 		else if(display.y<290 && display.y>=130){				
 			GUI_Text(80, 60, (uint8_t *) " Select note 1 ", White, Blue);
 			GUI_Text(80, 100, (uint8_t *) text_note1, White, Blue);
 			GUI_Text(80, 160, (uint8_t *) " Select note 2 ", Blue, White);
 			GUI_Text(80, 200, (uint8_t *) text_note2, Blue, White);
+			select = 2;
 		}
 	}
 	
 	// selezione tasti 
 	if(display.y>=240 && display.y<=290 && enable_screen == 1){
 		if(display.x >=50 && display.x <90){ // tasto save
-			freq_notes[0] = f[note1];
-			freq_notes[1] = f[note2];
+			freq_notes[0] = note1;
+			freq_notes[1] = note2;
+			GUI_Text(80, 60, (uint8_t *) " Select note 1 ", White, Blue);
+			GUI_Text(80, 100, (uint8_t *) text_note1, White, Blue);
+		
+			GUI_Text(80, 120, (uint8_t *) "____________", White, Blue);
+		
+			GUI_Text(80, 160, (uint8_t *) " Select note 2 ", White, Blue);
+			GUI_Text(80, 200, (uint8_t *) text_note2, White, Blue);
 			sprintf(text_note1, " %d - %c ", f[note1], note[note1]);
 			sprintf(text_note2, " %d - %c ", f[note2], note[note2]);
-			// salvo ed esco
-			enable_screen = 0;
-			select = 0;
-			LCD_Clear(Black);
-			GUI_Text(200, 50, (uint8_t *) " ON ", White, Black);
+			// salvo ed esco 
 		}
 		else if(display.x >= 180 && display.x <=200){ // tasto quit
 			enable_screen = 0;
