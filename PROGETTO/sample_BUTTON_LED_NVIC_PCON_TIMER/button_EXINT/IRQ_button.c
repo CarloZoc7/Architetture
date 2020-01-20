@@ -24,7 +24,7 @@ void EINT0_IRQHandler(void){
 	NVIC_DisableIRQ(EINT0_IRQn);		/* disable Button interrupts			 */
 	LPC_PINCON->PINSEL4    &= ~(1 << 20);     /* GPIO pin selection */
 	down3=1;
-	LPC_SC->EXTINT &= (1 << 1); 
+	LPC_SC->EXTINT &= (1 << 0); 
 }
 
 void EINT1_IRQHandler (void)	  	/* KEY1														 */

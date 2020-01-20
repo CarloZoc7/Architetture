@@ -62,6 +62,7 @@ volatile int down2 = 0;
 volatile int down3 = 0;
 
 int led_blinking = 0;
+int led_blinking_alarm = 0;
 int alarm_case = 0;
 int emergency_case = 0;
 int counter_note = 0;
@@ -89,18 +90,13 @@ void status_led_alarm(void);
 void alarm_leds(int);
 void loudspeaker(void);
 
+
 void RIT_IRQHandler (void)
 {					
 	static int selectUP=0;	
 	static int selectDOWN=0;
-	
-	if (alarm_case == 1){
-		loudspeaker();
-		status_led_alarm();
-	}
-	else
-		disable_timer(0);
 
+	
 	if ((LPC_GPIO1->FIOPIN & (1<<25)) == 0 && (reserved == 2 || reserved == 0) && arrived<=0 ) { // attivo il joystick prima dell'utilizzo, e se è stato risarvato ed è allo stesso piano dell'utente
 		enable = 1;
 		inactivity_joystick = 0;
@@ -225,9 +221,12 @@ void RIT_IRQHandler (void)
 			selectUP=0;
 			selectDOWN=0;
 			
-			if (alarm_case == 1){ // se sono nella situazione di alarm faccio il blinking del led a 4 hz 
-				// blinking in stato di allarme da usare 
-			}
+			if (alarm_case == 1){
+					loudspeaker();
+					status_led_alarm();
+				}
+				else
+					disable_timer(0);
 			
 			// conteggio per inutilizzo del joystick
 			if ( arrived <= 0 && (reserved == 2 || reserved == 0)){
@@ -251,7 +250,6 @@ void RIT_IRQHandler (void)
 				disable_timer(2); // spengo il timer per il blinking del led
 			
 				if ( elevator_floor == 2){
-					loudspeaker();
 					status_led_alarm();
 					alarm_case = 1;
 					emergency_case = 1;
@@ -305,7 +303,7 @@ void RIT_IRQHandler (void)
 
 // ---> BUTTON MANAGEMENT <---
 	/* button management */
-		if(down!=0 && arrived <= 0 && (reserved == 0 || reserved == -1)){ 
+	if(down!=0 && arrived <= 0 && (reserved == 0 || reserved == -1)){ 
 		if((LPC_GPIO2->FIOPIN & (1<<11)) == 0){	/* KEY1 pressed _ FLOOR 1 - ascensore libero e non in movimento tramite joystick e non riservato*/
 			down++;				
 			switch(down){
@@ -402,71 +400,66 @@ void RIT_IRQHandler (void)
 		}
 	}
 	
-	if(down3 != 0 && movement != 0)
+	if(down3 != 0)
 	{
 		if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){ // KEY INT0 pressed
 			down3++;
-			switch(down3){
-				case 2:	// scenario in cui sia premuto per caso o per sbloccare la situazione di alarm 
-					if (alarm_case == 1){
+			if(down3 == 2){
+				if (alarm_case == 1){
 						// sblocco la situazione di alarm, altrimenti nulla 
 						disable_timer(0); // spengo loudspeaker
 						
 						alarm_case = 0;
 						inactivity_joystick = 0;
 						alarm_leds(0);
-					}
-					break;
-				case 40: // il pulsante deve essere premuto per 2sec--> 2/0.05 = 40 interrupt di RIT
+						
+						NVIC_EnableIRQ(EINT0_IRQn);
+				}
+			} else if(down3>=40){
 						emergency_case = 1;
-						down3=0;;
-						loudspeaker();
 						status_led_alarm();
 						enable = 0; // disattivo il joystick per bloccare la posizione dell'ascensore
 						alarm_leds(1);
 						
 						alarm_case = 1;
 						reserved = 0;
-						down3 = 0;
-					break;
-				default:
-					break;
-			}
-			
-		}
-	else{
-		down3 = 0;
-		NVIC_EnableIRQ(EINT0_IRQn);
-		LPC_PINCON->PINSEL4     |= (1 << 20); 
-		LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
-		return;
+						
+						NVIC_EnableIRQ(EINT0_IRQn);
+					}
+	}
+		else{
+			down3 = 0;
+			NVIC_EnableIRQ(EINT0_IRQn);
+			LPC_PINCON->PINSEL4     |= (1 << 20); 
 		}
 	}
+
   LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
-	
   return;
 }
 
 void status_led(){
 		// ascendore in movimento
-	if( led_blinking % BLINKING_MOVING == 0)
-			LED_On(7);
-	else
+	if( led_blinking == BLINKING_MOVING || led_blinking == 0 )
 			LED_Off(7);
-	led_blinking++;
-	if(led_blinking == 1000)
+	else if( led_blinking == BLINKING_MOVING*2)
+			LED_On(7);
+	
+
+	if(led_blinking == 10)
 		led_blinking = 0;
+	led_blinking++;
 }
 
 void status_led_alarm(){
-	//loudspeaker();
-	if( led_blinking % ALARM_BLINKING == 0)
-		LED_On(7);
-	else
+	if( led_blinking_alarm == ALARM_BLINKING || led_blinking_alarm == 0)
 		LED_Off(7);
-	led_blinking++;
-	if(led_blinking == 1000)
-		led_blinking = 0;
+	else if(led_blinking_alarm == ALARM_BLINKING*2)
+		LED_On(7);
+
+	if(led_blinking_alarm == ALARM_BLINKING*2)
+		led_blinking_alarm = 0;
+	led_blinking_alarm++;
 }
 
 void alarm_leds(int on){
@@ -491,22 +484,24 @@ void alarm_leds(int on){
 void loudspeaker(){
 	uint16_t freq_values[8] ={1062, 1125, 1263, 1417, 1592, 1684, 1890, 2120};
 	int tmp;
-	if(counter_note == 0){
+	if(counter_note==10 || counter_note == 0){
 		tmp = freq_notes[0];
 		reset_timer(0);
-		disable_timer(0);
 		init_timer(0, freq_values[tmp]);
 		enable_timer(0);
 		counter_note = 1;
 	}
-	else{
+	else if(counter_note == 20){
 		tmp = freq_notes[1];
 		reset_timer(0);
-		disable_timer(0);
 		init_timer(0, freq_values[tmp]);
 		enable_timer(0);
 		counter_note = 0;
 	}
+	
+	if(counter_note == 20)
+		counter_note = 0;
+	counter_note++;
 }
 
 /******************************************************************************
